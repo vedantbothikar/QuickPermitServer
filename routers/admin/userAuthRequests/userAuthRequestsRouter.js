@@ -1,20 +1,15 @@
 const express = require("express");
 const router = express.Router();
+
 // Load User model
 const User = require("../../../models/User");
-const Form = require("../../../models/form");
-const clubHeadForm = require("../../../models/clubHeadForm");
-const {
-  ensureAuthenticated,
-  forwardAuthenticated,
-} = require("../../../config/auth");
-const { findById } = require("../../../models/form");
-const path = require("path");
-const { sendEmail } = require("../../../common_functionalities/MailSender");
-const { db } = require("../../../models/form");
-const bcrypt = require("bcryptjs");
-const passport = require("passport");
 
+// authentication check
+const { ensureAuthenticated } = require("../../../config/auth");
+
+const { sendEmail } = require("../../../common_functionalities/MailSender");
+
+//Admin Reject Route
 router.post("/submituserReason", async (req, res) => {
   if (req.user.email !== "admin@gmail.com") {
     res.render("404.ejs");
@@ -26,6 +21,7 @@ router.post("/submituserReason", async (req, res) => {
   res.status(200);
 });
 
+//route to get all users acc to filter
 router.get(
   "/admindashboard/user/:filter",
   ensureAuthenticated,
@@ -36,9 +32,6 @@ router.get(
       }
 
       const filter = req.params.filter;
-      const approvedstatus = req.user.approved;
-      const adminStatus = req.user.adminStatus;
-
       const allforms = await User.find({});
 
       if (filter == "approved") {
@@ -141,7 +134,6 @@ router.get(
     try {
       const _id = req.params.id;
       // _id is of user selected
-
       const user = await User.findByIdAndUpdate(
         _id,
         {
@@ -208,7 +200,9 @@ router.get("/approveallusers", ensureAuthenticated, async (req, res) => {
         res.render("admin/afteruserapproved.hbs");
       }
     }
-  } catch (error) {}
+  } catch (error) {
+    res.send(error);
+  }
 });
 
 // after clicking on reject for user
