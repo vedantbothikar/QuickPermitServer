@@ -34,7 +34,7 @@ Admin has all the powers - They can Schedule an event, Create a new club, Create
 
 
 ## Tech Stack :
-Node.js, Express.js, MongoDB, Bootstrap, HTML, CSS
+Node.js, Express.js, MongoDB
 <p> Database hosted on <a href="https://www.mongodb.com/cloud/atlas"> MongoDB Atlas<a/> </p>
 
 
