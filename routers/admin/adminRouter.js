@@ -1,26 +1,29 @@
+// packages
 const express = require("express");
 const router = express.Router();
-// Load User model
+
+const path = require("path");
+const bcrypt = require("bcryptjs");
+const passport = require("passport");
+
+// Load models
 const User = require("../../models/User");
 const Form = require("../../models/form");
+const { db } = require("../../models/form");
+const { findById } = require("../../models/form");
+const { findOne } = require("../../models/User");
+const { findOneAndUpdate } = require("../../models/User");
+const club = require("../../models/club");
+const CreateUser = require("../../models/jsoncreateusers");
+
+// functionalities
 const clubHeadForm = require("../../models/clubHeadForm");
 const {
   ensureAuthenticated,
   forwardAuthenticated,
 } = require("../../config/auth");
-const { findById } = require("../../models/form");
-const { findOne } = require("../../models/User");
-const { findOneAndUpdate } = require("../../models/User");
-const path = require("path");
-const { db } = require("../../models/form");
-const bcrypt = require("bcryptjs");
-const passport = require("passport");
-const club = require("../../models/club");
-const CreateUser = require("../../models/jsoncreateusers");
 
-// router.get("/showclubs",(req,res)=>)
-// add delete user
-
+// route for viewing all teachers
 router.get("/viewallteachers", ensureAuthenticated, async (req, res) => {
   const teachers = await User.find({ position: "Teacher" });
 
@@ -28,6 +31,7 @@ router.get("/viewallteachers", ensureAuthenticated, async (req, res) => {
   var teacherclubs = [];
   var singleteacherclubs = [];
 
+  // logic to get appropriate teachers
   for (var i = 0; i < teachers.length; i++) {
     var singleteacherclubs = [];
 
@@ -37,9 +41,12 @@ router.get("/viewallteachers", ensureAuthenticated, async (req, res) => {
     teacherclubs.push(singleteacherclubs);
   }
   const user = req.user;
+
   // auth clubs
   var teacherauthclubs = [];
   var singleteacherauthclubs = [];
+
+  // logic to get appropriate teachers
 
   for (var i = 0; i < teachers.length; i++) {
     var singleteacherauthclubs = [];
@@ -49,23 +56,24 @@ router.get("/viewallteachers", ensureAuthenticated, async (req, res) => {
     teacherauthclubs.push(singleteacherauthclubs);
   }
 
+  // rendering view all teachers page with teachers information
   res.render("admin/viewallteachers", {
     teachers: teachers,
     teacherclubs: teacherclubs,
     teacherauthclubs: teacherauthclubs,
     user: user,
   });
-  // res.render("admin/addDeleteUser", {
-  //   user: req.user,
-  // });
 });
 
+// view all students route
 router.get("/viewallstudents", ensureAuthenticated, async (req, res) => {
   const students = await User.find({ position: "Student" });
 
   // clubs
   var studentclubs = [];
   var singlestudentclubs = [];
+
+  // logic to get appropriate students
 
   for (var i = 0; i < students.length; i++) {
     var singlestudentclubs = [];
@@ -76,9 +84,12 @@ router.get("/viewallstudents", ensureAuthenticated, async (req, res) => {
     studentclubs.push(singlestudentclubs);
   }
   const user = req.user;
+
   // auth clubs
   var studentauthclubs = [];
   var singlestudentauthclubs = [];
+
+  // logic to get appropriate students
 
   for (var i = 0; i < students.length; i++) {
     var singlestudentauthclubs = [];
@@ -88,6 +99,7 @@ router.get("/viewallstudents", ensureAuthenticated, async (req, res) => {
     studentauthclubs.push(singlestudentauthclubs);
   }
 
+  // rendering view all students page with all students information
   res.render("admin/viewallstudents", {
     students: students,
     studentclubs: studentclubs,
@@ -96,12 +108,14 @@ router.get("/viewallstudents", ensureAuthenticated, async (req, res) => {
   });
 });
 
+// manage users page route
 router.get("/addDeleteUser", ensureAuthenticated, (req, res) => {
   // only admin should be able to delete users
   if (req.user.email !== "admin@gmail.com") {
     res.render("404.ejs");
   }
 
+  // just render the page if user is admin
   if (req.user.email == "admin@gmail.com") {
     res.render("admin/addDeleteUser", {
       user: req.user,
@@ -111,23 +125,27 @@ router.get("/addDeleteUser", ensureAuthenticated, (req, res) => {
   }
 });
 
+// after user is removed by admin rendering this page with this route
 router.get("/afteruserremoved/:id", ensureAuthenticated, async (req, res) => {
   try {
     if (req.user.email !== "admin@gmail.com") {
       res.render("404.ejs");
     }
 
+    // data
     const regid = req.params.id;
 
+    // find a user with that entered registration id
     const usertodel = await User.findOne({
       regid: regid,
     });
 
+    // if there doens't exist any user with the given registration id then render no user exist page
     if (!usertodel) {
       res.render("admin/nouserexists");
     }
 
-    // sendCancelationEmail(req.user.email, req.user.name);
+    // return json response
     res.json({
       status: "success",
       username: usertodel.name.toString(),
@@ -141,13 +159,18 @@ router.get("/afteruserremoved/:id", ensureAuthenticated, async (req, res) => {
   }
 });
 
+// after confirmation to delete the user from database
 router.get("/afterconfirmation/:id", ensureAuthenticated, async (req, res) => {
   try {
+    // data
     const regid = req.params.id;
+
+    // finding that user with that id and then deleting it from the database
     await User.findOneAndDelete({
       regid: regid,
     });
-    // sendCancelationEmail(req.user.email, req.user.name);
+
+    // rendering page
     res.render("admin/afteruserremoved");
     res.status(200);
   } catch (e) {
@@ -155,8 +178,8 @@ router.get("/afterconfirmation/:id", ensureAuthenticated, async (req, res) => {
     console.log("Error: ", e);
   }
 });
-// add delete user ends
 
+// admin dashboard page route
 router.get("/admindashboard", ensureAuthenticated, (req, res) => {
   if (req.user.email !== "admin@gmail.com") {
     res.render("404.ejs");
@@ -167,36 +190,47 @@ router.get("/admindashboard", ensureAuthenticated, (req, res) => {
   });
 });
 
+// creating new club by admin route
 router.get("/createNewClub", ensureAuthenticated, async (req, res) => {
   if (req.user.email !== "admin@gmail.com") {
     res.render("404.ejs");
   }
+
+  // find all the teachers in database
   const teachers = await User.find({ position: "Teacher" });
   const teachernames = [];
 
+  // getting just the teacher names in teachernames array
   for (var i = 0; i < teachers.length; i++) {
     teachernames.push(teachers[i].name);
   }
 
+  // render the page with teacher names
   res.render("admin/clubCreationForm.ejs", {
     user: req.user,
     teachernames: teachernames,
   });
 });
 
+// save the new club created using this route
 router.post("/savenewclub", ensureAuthenticated, async (req, res) => {
   try {
     if (req.user.email !== "admin@gmail.com") {
       res.render("404.ejs");
     }
 
+    // create new club model
     const newClub = new club({
       ...req.body,
     });
+
+    // save club to database
     await newClub.save();
     if (req.body.teacherHeads) {
+      // data
       const { teacherHeads, clubName } = newClub;
-      console.log(teacherHeads);
+
+      // updating
       for (var i = 0; i < teacherHeads.length; i++) {
         const user = await User.findOneAndUpdate(
           { name: teacherHeads[i] },
@@ -205,9 +239,10 @@ router.post("/savenewclub", ensureAuthenticated, async (req, res) => {
           },
           { new: true, runValidators: true }
         );
-        // console.log(user.name)
       }
     }
+
+    // rendering
     res.render("admin/afterAnimation.hbs");
   } catch (e) {
     console.log(e);
@@ -215,6 +250,7 @@ router.post("/savenewclub", ensureAuthenticated, async (req, res) => {
   }
 });
 
+// route after saving the new club
 router.get(
   "/aftersavingClub/:clubName",
   ensureAuthenticated,
@@ -223,25 +259,31 @@ router.get(
       res.render("404.ejs");
     }
 
+    // take the club name from parameters
     const club = req.params.clubName;
 
+    // creating new form for club creation
     const form1 = new clubForm({
       clubName: club,
-    }); //////??????????clubform kasa kay asel...club..@AKAS
+    });
     await form1.save();
 
+    // rendering animation
     res.render("saveForm.hbs");
   }
 );
 
-//to view all clubs overview
+// to view all clubs overview
 router.get("/adminclubsoverview", ensureAuthenticated, async (req, res) => {
   try {
     if (req.user.email !== "admin@gmail.com") {
       res.render("404.ejs");
     }
 
+    // find all clubs
     const clubs = await club.find();
+
+    // render with data of all clubs
     res.render("admin/viewClubsOverview", {
       user: req.user,
       clubs: clubs,
@@ -259,13 +301,18 @@ router.get("/viewclub/:clubName", ensureAuthenticated, async (req, res) => {
       res.render("404.ejs");
     }
 
+    // get that name of specific club
     const clubName = req.params.clubName;
 
+    // get all permission forms sent in the name of this club
     var allforms = await Form.find();
+
+    // find a club by the name of club name received in params
     var clubDetails = await club.findOne({
       clubName,
     });
 
+    // render
     res.render("admin/clubDetails", {
       user: req.user,
       club: clubDetails,
@@ -277,11 +324,12 @@ router.get("/viewclub/:clubName", ensureAuthenticated, async (req, res) => {
     console.log("Error: ", e);
   }
 });
+
 //status 2 = no details selected(default)
 //status 0 = club details
 //status 1 = event details
 
-//to view various details
+// route to view various details
 router.get(
   "/viewclub/:clubName/details/:type",
   ensureAuthenticated,
@@ -291,12 +339,17 @@ router.get(
         res.render("404.ejs");
       }
 
+      // data
       var clubName = req.params.clubName;
       var allforms = await Form.find();
+
+      // find one club with the club name received
       const clubDetails = await club.findOne({
         clubName,
       });
       var type = req.params.type;
+
+      // render page as required
       if (type == "clubdetails") {
         res.render("admin/clubDetails", {
           user: req.user,
@@ -328,6 +381,7 @@ router.get(
   }
 );
 
+// view club create new event
 router.get(
   "/viewclub/:clubName/createNewEvent",
   ensureAuthenticated,
@@ -336,6 +390,7 @@ router.get(
       res.render("404.ejs");
     }
 
+    // take the club name from parameters
     const clubName = req.params.clubName;
     res.render("admin/createEvent.ejs", {
       clubName,
@@ -344,16 +399,20 @@ router.get(
   }
 );
 
+// save form wwhen admin creates an event
 router.post("/saveAdminEventForm", ensureAuthenticated, async (req, res) => {
   try {
     if (req.user.email !== "admin@gmail.com") {
       res.render("404.ejs");
     }
 
+    // create a new form
     const newEvent = new Form({
       ...req.body,
       owner: req.user._id,
     });
+
+    // save form
     await newEvent.save();
     res.render("admin/afterAnimation.hbs");
   } catch (e) {
@@ -361,95 +420,9 @@ router.post("/saveAdminEventForm", ensureAuthenticated, async (req, res) => {
   }
 });
 
+// creating user page
 router.get("/createUser", ensureAuthenticated, (req, res) => {
   res.render("admin/createUser");
-});
-
-router.get("/reportsheet", (req, res) => {
-  res.render("admin/report/uploadexcel.ejs");
-});
-
-router.post("/createUser", ensureAuthenticated, (req, res) => {
-  const { name, email, password, password2, regid, position, year } = req.body;
-  let errors = [];
-
-  if (!name || !email || !password || !password2) {
-    errors.push({
-      msg: "Please enter all fields",
-    });
-  }
-
-  if (password != password2) {
-    errors.push({
-      msg: "Passwords do not match",
-    });
-    res.render("home/register", {
-      errors,
-      name,
-      email,
-      password,
-      password2,
-      regid,
-    });
-  }
-
-  if (password.length < 6) {
-    errors.push({
-      msg: "Password must be at least 6 characters",
-    });
-  }
-
-  if (errors.length > 0) {
-    res.render("admin/createUser", {
-      errors,
-      name,
-      email,
-      password,
-      password2,
-    });
-  } else {
-    User.findOne({
-      $or: [{ email: email }, { regid: regid.toLowerCase() }],
-    }).then((user) => {
-      if (user) {
-        errors.push({
-          msg: "Email or Registration ID already exists",
-        });
-        res.render("admin/createUser", {
-          errors,
-          name,
-          email,
-          password,
-          password2,
-          regid,
-        });
-      } else {
-        const newUser = new User({
-          name,
-          email,
-          password,
-          regid,
-          position,
-          year,
-          approved: "approved",
-        });
-
-        bcrypt.genSalt(10, (err, salt) => {
-          bcrypt.hash(newUser.password, salt, (err, hash) => {
-            if (err) throw err;
-            newUser.password = hash;
-            newUser
-              .save()
-              .then((user) => {
-                req.flash("success_msg", "Account Created");
-                res.redirect("/admindashboard");
-              })
-              .catch((err) => console.log(err));
-          });
-        });
-      }
-    });
-  }
 });
 
 module.exports = router;

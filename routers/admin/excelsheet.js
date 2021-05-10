@@ -1,28 +1,31 @@
+// packages
 const express = require("express");
 const router = express.Router();
-const User = require("../../models/User");
 const bcrypt = require("bcryptjs");
+
+// Models
+const User = require("../../models/User");
+
+// functionalities
 const {
   ensureAuthenticated,
   forwardAuthenticated,
 } = require("../../config/auth");
-const { findById } = require("../../models/form");
 
-// required for excel sheet
+// packages required for excel sheet
 var bodyParser = require("body-parser");
 var multer = require("multer");
 var xlstojson = require("xls-to-json-lc");
 var xlsxtojson = require("xlsx-to-json-lc");
 
+//multers disk storage settings
 var storage = multer.diskStorage({
-  //multers disk storage settings
   destination: function (req, file, cb) {
     cb(null, __basedir + "/uploads");
-    // cb(null, __dirname.replace("admin", "") + "excelupload");
-    // path.join(__dirname, "../../public/uploads")
   },
   filename: function (req, file, cb) {
     var datetimestamp = Date.now();
+    // we store the excel sheet with custom name
     cb(
       null,
       file.fieldname +
@@ -34,29 +37,31 @@ var storage = multer.diskStorage({
   },
 });
 
+// multer settings
 var upload = multer({
-  //multer settings
   storage: storage,
   fileFilter: function (req, file, callback) {
-    //file filter
+    //file filtering
     if (
       ["xls", "xlsx"].indexOf(
         file.originalname.split(".")[file.originalname.split(".").length - 1]
       ) === -1
     ) {
+      // extension type problem
       return callback(new Error("Wrong extension type"));
     }
     callback(null, true);
   },
 }).single("file");
 
+// post request for uploading of excel sheet
 router.post("/upload", ensureAuthenticated, function (req, res) {
   if (req.user.email !== "admin@gmail.com") {
     res.render("404.ejs");
   }
 
+  // data
   var exceltojson;
-
   var newusercount = 0;
   var existingusercount = 0;
   var newuserarray = [];
@@ -70,15 +75,17 @@ router.post("/upload", ensureAuthenticated, function (req, res) {
     }
     /** Multer gives us file info in req.file object */
     if (!req.file) {
-      // res.json({ error_code: 1, err_desc: "No file passed" });
+      // handling case when no file has been uploaded
       res.render("admin/excelsheet/nofileuploaded.ejs", {
         user: req.user,
       });
       return;
     }
-    /** Check the extension of the incoming file and
-     *  use the appropriate module
-     */
+
+    /* Check the extension of the incoming file and
+       use the appropriate module */
+
+    // setting according to extension type
     if (
       req.file.originalname.split(".")[
         req.file.originalname.split(".").length - 1
@@ -88,8 +95,9 @@ router.post("/upload", ensureAuthenticated, function (req, res) {
     } else {
       exceltojson = xlstojson;
     }
-    console.log(req.file.path);
+
     try {
+      // actual conversion from excel to json
       exceltojson(
         {
           input: req.file.path,
@@ -101,9 +109,9 @@ router.post("/upload", ensureAuthenticated, function (req, res) {
             return res.json({ error_code: 1, err_desc: err, data: null });
           }
 
-          // res.json({ error_code: 0, err_desc: null, data: result });
+          // here we can access result
+          // logic of creating new users goes here
           for (var i = 0; i < result.length; i++) {
-            // createuserfunc(result, i);
             const name = result[i].name;
             const email = result[i].email;
             const password = result[i].regid;
@@ -122,16 +130,15 @@ router.post("/upload", ensureAuthenticated, function (req, res) {
                 if (existingusercount === result.length) {
                   // deleting the file from database
                   var fs = require("fs");
-                  try {
-                    fs.unlinkSync(req.file.path);
-                  } catch (e) {
-                    //error deleting the file
-                  }
+                  fs.unlinkSync(req.file.path);
+
+                  // rendering the page when all the users already exits
                   res.render("admin/excelsheet/allusersexist.ejs", {
                     user: req.user,
                   });
                 }
               } else {
+                // create new user model
                 const newUser = new User({
                   name,
                   email,
@@ -141,6 +148,7 @@ router.post("/upload", ensureAuthenticated, function (req, res) {
                   year,
                 });
 
+                // hashing password
                 bcrypt.genSalt(10, (err, salt) => {
                   bcrypt.hash(newUser.password, salt, (err, hash) => {
                     if (err) throw err;
@@ -157,11 +165,9 @@ router.post("/upload", ensureAuthenticated, function (req, res) {
                         ) {
                           //    deleting the file from database
                           var fs = require("fs");
-                          try {
-                            fs.unlinkSync(req.file.path);
-                          } catch (e) {
-                            //error deleting the file
-                          }
+                          fs.unlinkSync(req.file.path);
+
+                          // rendering page with table of users created
                           res.render("admin/excelsheet/result.ejs", {
                             result: result,
                             newuserarray: newuserarray,
@@ -175,7 +181,6 @@ router.post("/upload", ensureAuthenticated, function (req, res) {
                 });
               }
             });
-            // registration code complete
           }
         }
       );
@@ -185,6 +190,7 @@ router.post("/upload", ensureAuthenticated, function (req, res) {
   });
 });
 
+// result page for excel sheet route
 router.get("/result", ensureAuthenticated, (req, res) => {
   if (req.user.email !== "admin@gmail.com") {
     res.render("404.ejs");
