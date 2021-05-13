@@ -1,6 +1,7 @@
 var nodemailer = require("nodemailer");
 var random = require("random");
-// var hbs = require('nodemailer-express-handlebars')
+
+// nodemailer settings
 var transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
@@ -12,6 +13,8 @@ var transporter = nodemailer.createTransport({
   },
 });
 
+// forgot password function
+// we will be getting the information from the route that calls this function
 const forgotPassword = (email, subject, message) => {
   var mailOptions = {
     from: "teamquickpermit@gmail.com",
@@ -21,6 +24,8 @@ const forgotPassword = (email, subject, message) => {
     html: `<h1>Hi there</h1><br><br> <div><p>Your OTP is ${otp}</p></div> <br/> <h2>Team Quick Permit</h2> `,
   };
 };
+
+// sending email settings
 const sendEmail = (email, subject, message, name) => {
   name = name || "there";
   var mailOptions = {
@@ -40,14 +45,15 @@ const sendEmail = (email, subject, message, name) => {
   });
 };
 
+// OTP function
 const sendOtpEmail = (email) => {
   const otp = random.int((min = 1001), (max = 9999));
 
+  // you can customize these
   var otpMailOptions = {
     from: "teamquickpermit@gmail.com",
     to: email,
     subject: "Reset Password from Quick Permit",
-    // text: `The following is your otp ${otp} `,
     html: `
     <div style="padding:50px;border:1px solid black">      
         <div><h2>Dear user,<br>As per your request, OTP for password reset is -  ${otp}</h2></div>
@@ -56,6 +62,7 @@ const sendOtpEmail = (email) => {
     </div>`,
   };
 
+  // sending otp mail
   transporter.sendMail(otpMailOptions, function (error, info) {
     if (error) {
       console.log(error);
@@ -66,6 +73,7 @@ const sendOtpEmail = (email) => {
   return otp;
 };
 
+// export functions from the file
 module.exports = {
   sendEmail,
   sendOtpEmail,
