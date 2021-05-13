@@ -2,7 +2,7 @@
 
 
 <h1 align="center">Quick Permit</h1>
-This is the server side part of the Quick Permit Project
+This is the server side code of the Quick Permit Project
 
 You can start using Quick Permit Software here - <a href="https://quickpermit.herokuapp.com/">Visit Webiste </a>
 
