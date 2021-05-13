@@ -6,6 +6,9 @@ This is the server side code of the Quick Permit Project
 
 You can start using Quick Permit Software here - <a href="https://quickpermit.herokuapp.com/">Visit Webiste </a>
 
+You can use these credentials to use the testing version
+Username - vbothikar2001@gmail.com
+Password - vedant123
 
 
 ## Description :
