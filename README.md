@@ -13,7 +13,7 @@ You can use these credentials to use the testing version <br/>
 
 ## Description :
 The motive behind the project is to have a hassle-free system to seek permissions from college to simplify the otherwise cumbersome process observed.
-The idea is that students can send permission requests to conduct events in college whereas teachers can approve or reject the requests. Based on this concept there are many other features which have been included which are mentioned below.
+The idea is that students can send permission requests to conduct events in college whereas teachers can approve or reject the requests. Based on this concept there are many other features that have been included which are mentioned below.
 <br/>
 <br/>
 There are 3 types of users - Student, Teacher, Admin <br/> <br/>
